@@ -1,0 +1,332 @@
+/* ============================================
+   Smart Agriculture Dashboard - Header
+   ============================================ */
+
+.header {
+    position: fixed;
+    top: 0;
+    left: var(--sidebar-width);
+    right: 0;
+    height: var(--header-height);
+    background: var(--header-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    z-index: 40;
+    transition: left var(--transition-normal), background var(--transition-normal);
+    box-shadow: var(--header-shadow);
+}
+
+.sidebar-collapsed .header {
+    left: var(--sidebar-collapsed);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+}
+
+.mobile-menu-btn {
+    display: none;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+}
+
+.mobile-menu-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.header-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-tertiary);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    padding: 0 14px;
+    max-width: 360px;
+    width: 100%;
+    transition: all var(--transition-fast);
+}
+
+.header-search:focus-within {
+    border-color: var(--accent-green);
+    background: var(--bg-secondary);
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+
+.header-search i {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.header-search input {
+    border: none;
+    background: transparent;
+    padding: 10px 0;
+    color: var(--text-primary);
+    width: 100%;
+}
+
+.header-search input::placeholder {
+    color: var(--text-muted);
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.header-item {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.header-item:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+/* Weather Widget */
+.weather-widget {
+    width: auto;
+    min-width: 260px;
+    height: auto;
+    padding: 10px 14px;
+    gap: 8px;
+    background: linear-gradient(135deg, #1e3a5f, #0f1f3a);
+    border-radius: var(--radius-lg);
+    color: white;
+    cursor: default;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.weather-widget:hover {
+    background: linear-gradient(135deg, #1e3a5f, #0f1f3a);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(30, 58, 95, 0.3);
+}
+
+.weather-widget:active {
+    transform: translateY(0);
+}
+
+.weather-widget-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.weather-widget-top i {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.weather-widget-primary {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.weather-temp {
+    font-weight: 800;
+    font-size: 1rem;
+    line-height: 1.1;
+}
+
+.weather-status {
+    font-size: 0.72rem;
+    opacity: 0.82;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.weather-widget-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+}
+
+.weather-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 7px 8px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    min-width: 0;
+}
+
+.weather-metric-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.75;
+}
+
+.weather-metric-value {
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.weather-forecast {
+    width: 100%;
+    font-size: 0.75rem;
+    line-height: 1.25;
+    opacity: 0.88;
+}
+
+/* Theme Toggle */
+.theme-toggle {
+    font-size: 1.1rem;
+}
+
+[data-theme="dark"] .theme-toggle i::before {
+    content: '\f185';
+}
+
+/* Notifications */
+.notification-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    min-width: 18px;
+    height: 18px;
+    background: var(--accent-red);
+    color: white;
+    border-radius: 9px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border: 2px solid var(--header-bg);
+}
+
+/* Profile */
+.profile-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    transition: all var(--transition-fast);
+}
+
+.profile-dropdown:hover .profile-avatar {
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+/* Profile Dropdown Menu */
+.profile-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 220px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: all var(--transition-normal);
+    z-index: 60;
+    overflow: hidden;
+}
+
+.profile-menu.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.profile-menu-header {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+}
+
+.profile-menu-name {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.profile-menu-role {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.profile-menu-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 0;
+}
+
+.profile-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    transition: all var(--transition-fast);
+    text-decoration: none;
+}
+
+.profile-menu-item:hover {
+    background: var(--bg-hover);
+    color: var(--accent-green);
+}
+
+.profile-menu-item i {
+    width: 18px;
+    text-align: center;
+    color: var(--text-secondary);
+    transition: color var(--transition-fast);
+}
+
+.profile-menu-item:hover i {
+    color: var(--accent-green);
+}
+
+.profile-dropdown {
+    position: relative;
+}

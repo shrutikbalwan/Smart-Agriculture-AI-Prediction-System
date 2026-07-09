@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Agriculture Dashboard</title>
+
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/cards.css">
+    <link rel="stylesheet" href="css/charts.css">
+    <link rel="stylesheet" href="css/history.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/animation.css">
+    <link rel="stylesheet" href="css/settings.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-leaf"></i>
+                    <span class="logo-text">AgriSense</span>
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <span class="nav-section-title">Main</span>
+                    <a href="#dashboard" class="nav-link active" data-page="dashboard">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#admin-dashboard" class="nav-link" data-page="admin-dashboard">
+                        <i class="fas fa-shield-halved"></i>
+                        <span>Admin Dashboard</span>
+                    </a>
+                    <a href="#reports" class="nav-link" data-page="reports">
+                        <i class="fas fa-file-lines"></i>
+                        <span>Reports</span>
+                    </a>
+                    <a href="#prediction-history" class="nav-link" data-page="prediction-history">
+                        <i class="fas fa-clock-rotate-left"></i>
+                        <span>Prediction History</span>
+                    </a>
+                    <a href="#settings" class="nav-link" data-page="settings">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name">Farm Manager</span>
+                        <span class="user-role">Administrator</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <!-- Header -->
+            <header class="header" id="header">
+                <div class="header-left">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open mobile menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="header-search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search crops, fields, reports..." id="searchInput">
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <div class="header-item weather-widget" id="weatherWidget">
+                        <div class="weather-widget-top">
+                            <i class="fas fa-cloud-sun"></i>
+                            <div class="weather-widget-primary">
+                                <span class="weather-temp" id="weatherTemp">--&deg;C</span>
+                                <span class="weather-status" id="weatherStatus">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="weather-widget-grid">
+                            <div class="weather-metric">
+                                <span class="weather-metric-label">Humidity</span>
+                                <span class="weather-metric-value" id="weatherHumidity">--</span>
+                            </div>
+                            <div class="weather-metric">
+                                <span class="weather-metric-label">Wind</span>
+                                <span class="weather-metric-value" id="weatherWind">--</span>
+                            </div>
+                            <div class="weather-metric">
+                                <span class="weather-metric-label">Rain</span>
+                                <span class="weather-metric-value" id="weatherRain">--</span>
+                            </div>
+                        </div>
+                        <div class="weather-forecast" id="weatherForecast">Loading...</div>
+                    </div>
+
+                    <div class="header-item theme-toggle" id="themeToggle" role="button" tabindex="0" aria-label="Toggle color theme">
+                        <i class="fas fa-moon"></i>
+                    </div>
+
+                    <div class="header-item notifications" id="notificationsBtn" role="button" tabindex="0" aria-label="Open notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" aria-label="Unread notifications">0</span>
+                    </div>
+
+                    <div class="header-item profile-dropdown" id="profileDropdown">
+                        <div class="profile-avatar" id="profileAvatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="profile-menu" id="profileMenu">
+                            <div class="profile-menu-header">
+                                <span class="profile-menu-name">Farm Manager</span>
+                                <span class="profile-menu-role">Administrator</span>
+                            </div>
+                            <div class="profile-menu-divider"></div>
+                            <a href="#" class="profile-menu-item" data-action="settings">
+                                <i class="fas fa-cog"></i> Settings
+                            </a>
+                            <a href="#" class="profile-menu-item" data-action="logout">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content" id="pageContent">
+                <!-- Dashboard Page -->
+                <div class="page active" id="page-dashboard">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Dashboard</h1>
+                            <p class="page-subtitle">Monitor your farm in real-time</p>
+                        </div>
+                        <div class="page-actions">
+                            <button class="btn btn-primary" id="refreshBtn">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <button class="btn btn-outline" id="exportBtn">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- =========================
+                     AI Prediction Panel
+                    ========================= -->
+                    
+                    <div class="card prediction-card">
+                    
+                        <div class="card-header">
+                            <h2>
+                                <i class="fas fa-brain"></i>
+                                Smart AI Prediction
+                            </h2>
+                        </div>
+                    
+                        <div class="prediction-grid">
+                            <div class="prediction-field">
+                                <label for="region">Region</label>
+                                <select id="region" aria-label="Select region">
+                                    <option>North India</option>
+                                    <option>South India</option>
+                                    <option>East Africa</option>
+                                    <option>Central USA</option>
+                                </select>
+                            </div>
+                            <div class="prediction-field">
+                                <label for="crop_type">Crop Type</label>
+                                <select id="crop_type" aria-label="Select crop type">
+                                    <option>Rice</option>
+                                    <option>Wheat</option>
+                                    <option>Cotton</option>
+                                    <option>Maize</option>
+                                    <option>Soybean</option>
+                                </select>
+                            </div>
+                            <div class="prediction-field">
+                                <label for="soil_moisture_%">Soil Moisture (%)</label>
+                                <input id="soil_moisture_%" type="number" placeholder="e.g. 45" min="0" max="100" aria-label="Soil moisture percentage">
+                                <span class="field-error" id="err-soil_moisture"></span>
+                            </div>
+                            <div class="prediction-field">
+                                <label for="soil_pH">Soil pH</label>
+                                <input id="soil_pH" type="number" placeholder="e.g. 6.5" step="0.1" min="0" max="14" aria-label="Soil pH level">
+                                <span class="field-error" id="err-soil_pH"></span>
+                            </div>
+                            <div class="prediction-field">
+                                <label for="temperature_C">Temperature (&deg;C)</label>
+                                <input id="temperature_C" type="number" placeholder="e.g. 28" aria-label="Temperature in Celsius">
+                                <span class="field-error" id="err-temperature_C"></span>
+                            </div>
+                            <div class="prediction-field">
+                                <label for="rainfall_mm">Rainfall (mm)</label>
+                                <input id="rainfall_mm" type="number" placeholder="e.g. 120" min="0" aria-label="Rainfall in millimeters">
+                                <span class="field-error" id="err-rainfall_mm"></span>
+                            </div>
+                            <div class="prediction-field">
+                                <label for="humidity_%">Humidity (%)</label>
+                                <input id="humidity_%" type="number" placeholder="e.g. 65" min="0" max="100" aria-label="Humidity percentage">
+                                <span class="field-error" id="err-humidity"></span>
+                            </div>
+                            <div class="prediction-field">
+                                <label for="sunlight_hours">Sunlight Hours</label>
+                                <input id="sunlight_hours" type="number" placeholder="e.g. 8" min="0" aria-label="Sunlight hours">
+                                <span class="field-error" id="err-sunlight_hours"></span>
+                            </div>
+                            <div class="prediction-field">
+                                <label for="irrigation_type">Irrigation Type</label>
+                                <select id="irrigation_type" aria-label="Select irrigation type">
+                                    <option>Drip</option>
+                                    <option>Sprinkler</option>
+                                    <option>Manual</option>
+                                </select>
+                            </div>
+                            <div class="prediction-field">
+                                <label for="fertilizer_type">Fertilizer Type</label>
+                                <select id="fertilizer_type" aria-label="Select fertilizer type">
+                                    <option>Organic</option>
+                                    <option>Inorganic</option>
+                                    <option>Mixed</option>
+                                </select>
+                            </div>
+                            <div class="prediction-field">
+                                <label for="pesticide_usage_ml">Pesticide (ml)</label>
+                                <input id="pesticide_usage_ml" type="number" placeholder="e.g. 50" min="0" aria-label="Pesticide usage in milliliters">
+                                <span class="field-error" id="err-pesticide_usage_ml"></span>
+                            </div>
+                            <div class="prediction-field">
+                                <label for="total_days">Total Days</label>
+                                <input id="total_days" type="number" placeholder="e.g. 120" min="1" aria-label="Total growing days">
+                                <span class="field-error" id="err-total_days"></span>
+                            </div>
+                            <div class="prediction-field">
+                                <label for="latitude">Latitude</label>
+                                <input id="latitude" type="number" placeholder="e.g. 28.61" step="any" min="-90" max="90" aria-label="Latitude coordinate">
+                                <span class="field-error" id="err-latitude"></span>
+                            </div>
+                            <div class="prediction-field">
+                                <label for="longitude">Longitude</label>
+                                <input id="longitude" type="number" placeholder="e.g. 77.20" step="any" min="-180" max="180" aria-label="Longitude coordinate">
+                                <span class="field-error" id="err-longitude"></span>
+                            </div>
+                            <div class="prediction-field">
+                                <label for="NDVI_index">NDVI Index</label>
+                                <input id="NDVI_index" type="number" step="0.01" placeholder="e.g. 0.65" min="0" max="1" aria-label="NDVI index value">
+                                <span class="field-error" id="err-NDVI_index"></span>
+                            </div>
+                        </div>
+                    
+                        <div class="prediction-actions">
+                            <button id="predictBtn" class="btn btn-primary" type="button" aria-label="Run AI prediction">
+                                <i class="fas fa-brain"></i>
+                                Predict Using AI
+                            </button>
+                            <button id="resetFormBtn" class="btn btn-outline" type="button" aria-label="Reset prediction form">
+                                <i class="fas fa-undo"></i>
+                                Reset
+                            </button>
+                        </div>
+                    
+                    </div>
+
+                    <div class="card prediction-results-card">
+                        <div class="card-header">
+                            <h2>
+                                <i class="fas fa-chart-simple"></i>
+                                AI Prediction Results
+                            </h2>
+                            <span class="results-badge" id="resultsBadge">Ready</span>
+                        </div>
+                        <div class="prediction-results">
+                            <div class="result-item">
+                                <span class="result-icon result-icon-green"><i class="fas fa-seedling"></i></span>
+                                <div class="result-info">
+                                    <span class="result-label">Recommended Crop</span>
+                                    <span class="result-value" id="cropResult">--</span>
+                                </div>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-icon result-icon-blue"><i class="fas fa-weight-hanging"></i></span>
+                                <div class="result-info">
+                                    <span class="result-label">Expected Yield</span>
+                                    <span class="result-value" id="yieldResult">--</span>
+                                </div>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-icon result-icon-red"><i class="fas fa-biohazard"></i></span>
+                                <div class="result-info">
+                                    <span class="result-label">Disease</span>
+                                    <span class="result-value" id="diseaseResult">--</span>
+                                </div>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-icon result-icon-cyan"><i class="fas fa-tint"></i></span>
+                                <div class="result-info">
+                                    <span class="result-label">Irrigation</span>
+                                    <span class="result-value" id="irrigationResult">--</span>
+                                </div>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-icon result-icon-orange"><i class="fas fa-flask"></i></span>
+                                <div class="result-info">
+                                    <span class="result-label">Fertilizer</span>
+                                    <span class="result-value" id="fertilizerResult">--</span>
+                                </div>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-icon result-icon-red"><i class="fas fa-temperature-high"></i></span>
+                                <div class="result-info">
+                                    <span class="result-label">Heat Stress</span>
+                                    <span class="result-value" id="heatResult">--</span>
+                                </div>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-icon result-icon-orange"><i class="fas fa-mountain"></i></span>
+                                <div class="result-info">
+                                    <span class="result-label">Soil Health</span>
+                                    <span class="result-value" id="soilResult">--</span>
+                                </div>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-icon result-icon-cyan"><i class="fas fa-cloud-rain"></i></span>
+                                <div class="result-info">
+                                    <span class="result-label">Rain Impact</span>
+                                    <span class="result-value" id="rainResult">--</span>
+                                </div>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-icon result-icon-purple"><i class="fas fa-chart-line"></i></span>
+                                <div class="result-info">
+                                    <span class="result-label">Farm Efficiency</span>
+                                    <span class="result-value" id="farmResult">--</span>
+                                </div>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-icon result-icon-blue"><i class="fas fa-clock"></i></span>
+                                <div class="result-info">
+                                    <span class="result-label">Irrigation Time</span>
+                                    <span class="result-value" id="timeResult">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats Cards -->
+                    <div class="cards-grid" id="cardsGrid">
+                        <div class="card stat-card" data-delay="0">
+                            <div class="card-icon card-icon-green">
+                                <i class="fas fa-seedling"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Average Yield</span>
+                                <span class="card-value" id="yieldValue">--</span>
+                                <span class="card-change neutral">
+                                    <i class="fas fa-database"></i> From MySQL
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="card stat-card" data-delay="1">
+                            <div class="card-icon card-icon-blue">
+                                <i class="fas fa-tint"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Average Irrigation</span>
+                                <span class="card-value" id="irrigationValue">--</span>
+                                <span class="card-change neutral">
+                                    <i class="fas fa-database"></i> From MySQL
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="card stat-card" data-delay="2">
+                            <div class="card-icon card-icon-orange">
+                                <i class="fas fa-mountain"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Average Soil Health</span>
+                                <span class="card-value" id="soilHealthValue">--</span>
+                                <span class="card-change neutral">
+                                    <i class="fas fa-database"></i> From MySQL
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="card stat-card" data-delay="3">
+                            <div class="card-icon card-icon-purple">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Average Farm Efficiency</span>
+                                <span class="card-value" id="efficiencyValue">--</span>
+                                <span class="card-change neutral">
+                                    <i class="fas fa-database"></i> From MySQL
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="card stat-card" data-delay="4">
+                            <div class="card-icon card-icon-red">
+                                <i class="fas fa-temperature-high"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Average Heat Stress</span>
+                                <span class="card-value" id="heatStressValue">--</span>
+                                <span class="card-change neutral">
+                                    <i class="fas fa-database"></i> From MySQL
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="card stat-card" data-delay="5">
+                            <div class="card-icon card-icon-cyan">
+                                <i class="fas fa-cloud-rain"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Average Rain Impact</span>
+                                <span class="card-value" id="rainImpactValue">--</span>
+                                <span class="card-change neutral">
+                                    <i class="fas fa-database"></i> From MySQL
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="charts-grid">
+                        <div class="card chart-card" data-delay="6">
+                            <div class="card-header">
+                                <h3><i class="fas fa-chart-area"></i> Yield Trend</h3>
+                                <div class="card-actions">
+                                    <select class="chart-period" id="yieldPeriod">
+                                        <option value="7">7 Days</option>
+                                        <option value="30" selected>30 Days</option>
+                                        <option value="90">90 Days</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="yieldChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="card chart-card" data-delay="7">
+                            <div class="card-header">
+                                <h3><i class="fas fa-chart-pie"></i> Farm Efficiency Trend</h3>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="resourceChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="card chart-card" data-delay="8">
+                            <div class="card-header">
+                                <h3><i class="fas fa-chart-bar"></i> Soil Health Trend</h3>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="soilChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="card chart-card" data-delay="9">
+                            <div class="card-header">
+                                <h3><i class="fas fa-temperature-low"></i> Rain Impact Trend</h3>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="weatherChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="card chart-card" data-delay="10">
+                            <div class="card-header">
+                                <h3><i class="fas fa-temperature-high"></i> Heat Stress Trend</h3>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="heatChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="card chart-card" data-delay="11">
+                            <div class="card-header">
+                                <h3><i class="fas fa-chart-line"></i> Prediction Trend</h3>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="predictionTrendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="card activity-card" data-delay="10">
+                        <div class="card-header">
+                            <h3><i class="fas fa-clock"></i> Recent Activity</h3>
+                            <a href="#" class="card-link">View All</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="activity-list" id="activityList">
+                                <div class="activity-item">
+                                    <div class="activity-icon activity-icon-green">
+                                        <i class="fas fa-seedling"></i>
+                                    </div>
+                                    <div class="activity-info">
+                                        <span class="activity-text">New crop cycle started for <strong>Rice Field A</strong></span>
+                                        <span class="activity-time">2 hours ago</span>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-icon activity-icon-blue">
+                                        <i class="fas fa-tint"></i>
+                                    </div>
+                                    <div class="activity-info">
+                                        <span class="activity-text">Irrigation system activated in <strong>Wheat Zone</strong></span>
+                                        <span class="activity-time">4 hours ago</span>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-icon activity-icon-orange">
+                                        <i class="fas fa-mountain"></i>
+                                    </div>
+                                    <div class="activity-info">
+                                        <span class="activity-text">Soil analysis completed for <strong>Field #3</strong></span>
+                                        <span class="activity-time">6 hours ago</span>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-icon activity-icon-red">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                    <div class="activity-info">
+                                        <span class="activity-text">Heat stress alert: <strong>Temperature threshold exceeded</strong></span>
+                                        <span class="activity-time">8 hours ago</span>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-icon activity-icon-purple">
+                                        <i class="fas fa-flask"></i>
+                                    </div>
+                                    <div class="activity-info">
+                                        <span class="activity-text">Fertilizer recommendation updated for <strong>Corn Field</strong></span>
+                                        <span class="activity-time">12 hours ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="page" id="page-reports">
+                    <div class="history-hero card">
+                        <div class="history-hero-copy">
+                            <span class="history-eyebrow"><i class="fas fa-file-lines"></i> Reporting Suite</span>
+                            <h1 class="page-title">Reports</h1>
+                            <p class="page-subtitle">Summarize prediction history, review trends, and export professional reports in CSV, Excel, or PDF format.</p>
+                        </div>
+                        <div class="history-hero-actions">
+                            <button class="btn btn-outline" id="reportRefreshBtn" type="button">
+                                <i class="fas fa-rotate"></i> Refresh
+                            </button>
+                            <button class="btn btn-outline" id="reportExportCsvBtn" type="button">
+                                <i class="fas fa-file-csv"></i> CSV
+                            </button>
+                            <button class="btn btn-outline" id="reportExportExcelBtn" type="button">
+                                <i class="fas fa-file-excel"></i> Excel
+                            </button>
+                            <button class="btn btn-primary" id="reportExportPdfBtn" type="button">
+                                <i class="fas fa-file-pdf"></i> PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="cards-grid history-stats-grid">
+                        <div class="card stat-card history-stat-card">
+                            <div class="card-icon card-icon-green">
+                                <i class="fas fa-database"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Total Records</span>
+                                <span class="card-value" id="reportsTotalValue">--</span>
+                            </div>
+                        </div>
+                        <div class="card stat-card history-stat-card">
+                            <div class="card-icon card-icon-blue">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Avg. Yield</span>
+                                <span class="card-value" id="reportsAvgYieldValue">--</span>
+                            </div>
+                        </div>
+                        <div class="card stat-card history-stat-card">
+                            <div class="card-icon card-icon-orange">
+                                <i class="fas fa-mountain"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Soil Health</span>
+                                <span class="card-value" id="reportsSoilValue">--</span>
+                            </div>
+                        </div>
+                        <div class="card stat-card history-stat-card">
+                            <div class="card-icon card-icon-purple">
+                                <i class="fas fa-cogs"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Efficiency</span>
+                                <span class="card-value" id="reportsEfficiencyValue">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card history-toolbar-card">
+                        <div class="history-table-meta" id="reportsGeneratedAtValue">Generating report...</div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="card chart-card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-chart-area"></i> Yield Trend</h3>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="reportsYieldChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="card chart-card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-chart-bar"></i> Disease Distribution</h3>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="reportsDiseaseChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card history-table-card">
+                        <div class="card-header history-table-header">
+                            <h3><i class="fas fa-file-alt"></i> Recent Report Data</h3>
+                        </div>
+                        <div class="card-body history-table-body">
+                            <div class="history-table-wrap">
+                                <table class="history-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Region</th>
+                                            <th>Crop</th>
+                                            <th>Recommended Crop</th>
+                                            <th>Yield</th>
+                                            <th>Disease</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reportsTableBody"></tbody>
+                                </table>
+                            </div>
+                            <div class="history-empty-state" id="reportsEmptyState" hidden>
+                                <div class="history-empty-icon">
+                                    <i class="fas fa-folder-open"></i>
+                                </div>
+                                <h3>No report data available</h3>
+                                <p>Prediction history is empty or the backend is currently unavailable.</p>
+                            </div>
+                            <div class="history-loading-state" id="reportsLoadingState" hidden>
+                                <div class="history-spinner"></div>
+                                <p>Building report data...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page" id="page-admin-dashboard">
+                    <div class="history-hero card">
+                        <div class="history-hero-copy">
+                            <span class="history-eyebrow"><i class="fas fa-shield-halved"></i> Admin Overview</span>
+                            <h1 class="page-title">Admin Dashboard</h1>
+                            <p class="page-subtitle">Monitor prediction volume, crop recommendations, yield quality, and database footprint in one place.</p>
+                        </div>
+                        <div class="history-hero-actions">
+                            <button class="btn btn-outline" id="adminRefreshBtn" type="button">
+                                <i class="fas fa-rotate"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="cards-grid history-stats-grid">
+                        <div class="card stat-card history-stat-card">
+                            <div class="card-icon card-icon-green">
+                                <i class="fas fa-database"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Total Predictions</span>
+                                <span class="card-value" id="adminTotalPredictionsValue">--</span>
+                            </div>
+                        </div>
+                        <div class="card stat-card history-stat-card">
+                            <div class="card-icon card-icon-blue">
+                                <i class="fas fa-seedling"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Most Recommended Crop</span>
+                                <span class="card-value" id="adminMostCropValue">--</span>
+                            </div>
+                        </div>
+                        <div class="card stat-card history-stat-card">
+                            <div class="card-icon card-icon-orange">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Average Yield</span>
+                                <span class="card-value" id="adminAverageYieldValue">--</span>
+                            </div>
+                        </div>
+                        <div class="card stat-card history-stat-card">
+                            <div class="card-icon card-icon-purple">
+                                <i class="fas fa-bullseye"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Prediction Accuracy</span>
+                                <span class="card-value" id="adminAccuracyValue">--</span>
+                            </div>
+                        </div>
+                        <div class="card stat-card history-stat-card">
+                            <div class="card-icon card-icon-yellow">
+                                <i class="fas fa-server"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Database Size</span>
+                                <span class="card-value" id="adminDatabaseSizeValue">--</span>
+                            </div>
+                        </div>
+                        <div class="card stat-card history-stat-card">
+                            <div class="card-icon card-icon-red">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Today's Predictions</span>
+                                <span class="card-value" id="adminTodayPredictionsValue">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="card chart-card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-chart-area"></i> Daily Predictions</h3>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="adminDailyPredictionsChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="card chart-card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-chart-bar"></i> Recommended Crops</h3>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="adminCropDistributionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card history-table-card">
+                        <div class="card-header history-table-header">
+                            <h3><i class="fas fa-table"></i> Live Admin Overview</h3>
+                        </div>
+                        <div class="card-body history-table-body">
+                            <div class="history-empty-state" id="adminEmptyState" hidden>
+                                <div class="history-empty-icon">
+                                    <i class="fas fa-folder-open"></i>
+                                </div>
+                                <h3>No admin metrics available</h3>
+                                <p>The backend is currently unavailable or no history data has been recorded yet.</p>
+                            </div>
+                            <div class="history-loading-state" id="adminLoadingState" hidden>
+                                <div class="history-spinner"></div>
+                                <p>Loading admin dashboard...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page" id="page-prediction-history">
+                    <div class="history-hero card">
+                        <div class="history-hero-copy">
+                            <span class="history-eyebrow">MySQL-backed records</span>
+                            <h1 class="page-title">Prediction History</h1>
+                            <p class="page-subtitle">Search, filter, and manage every prediction stored by the backend.</p>
+                        </div>
+                        <div class="history-hero-actions">
+                            <button class="btn btn-outline" id="historyRefreshBtn" type="button">
+                                <i class="fas fa-rotate"></i> Refresh
+                            </button>
+                            <button class="btn btn-primary" id="historyResetBtn" type="button">
+                                <i class="fas fa-broom"></i> Reset Filters
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="cards-grid history-stats-grid">
+                        <div class="card stat-card history-stat-card">
+                            <div class="card-icon card-icon-green">
+                                <i class="fas fa-database"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Total Records</span>
+                                <span class="card-value" id="historyTotalValue">--</span>
+                            </div>
+                        </div>
+                        <div class="card stat-card history-stat-card">
+                            <div class="card-icon card-icon-blue">
+                                <i class="fas fa-eye"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Visible Records</span>
+                                <span class="card-value" id="historyVisibleValue">--</span>
+                            </div>
+                        </div>
+                        <div class="card stat-card history-stat-card">
+                            <div class="card-icon card-icon-orange">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Latest Prediction</span>
+                                <span class="card-value history-metric-text" id="historyLatestValue">--</span>
+                            </div>
+                        </div>
+                        <div class="card stat-card history-stat-card">
+                            <div class="card-icon card-icon-purple">
+                                <i class="fas fa-filter"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Active Filters</span>
+                                <span class="card-value" id="historyActiveFiltersValue">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card history-toolbar-card">
+                        <div class="history-search-row">
+                            <div class="history-search-box">
+                                <i class="fas fa-search"></i>
+                                <input id="historySearchInput" type="search" placeholder="Search records by region, crop, disease, or yield">
+                            </div>
+                            <button class="btn btn-outline" id="historySearchBtn" type="button">Search</button>
+                            <button class="btn btn-outline" id="historyClearSearchBtn" type="button">Clear</button>
+                        </div>
+
+                        <div class="history-filter-grid">
+                            <select id="historyRegionFilter">
+                                <option value="">All Regions</option>
+                            </select>
+                            <select id="historyCropFilter">
+                                <option value="">All Crops</option>
+                            </select>
+                            <select id="historyDiseaseFilter">
+                                <option value="">All Diseases</option>
+                            </select>
+                            <div class="history-date-group">
+                                <input id="historyStartDate" type="date" aria-label="Start date">
+                            </div>
+                            <div class="history-date-group">
+                                <input id="historyEndDate" type="date" aria-label="End date">
+                            </div>
+                            <button class="btn btn-primary history-apply-btn" id="historyApplyFiltersBtn" type="button">
+                                <i class="fas fa-sliders"></i> Apply Filters
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card history-table-card">
+                        <div class="card-header history-table-header">
+                            <h3><i class="fas fa-clock-rotate-left"></i> Prediction Records</h3>
+                            <div class="history-table-meta" id="historyTableMeta">Loading...</div>
+                        </div>
+                        <div class="card-body history-table-body">
+                            <div class="history-table-wrap">
+                                    <table class="history-table">
+                                        <thead>
+                                            <tr>
+                                                <th data-sort="prediction_time" class="sortable">Date <i class="fas fa-sort"></i></th>
+                                                <th data-sort="region" class="sortable">Region <i class="fas fa-sort"></i></th>
+                                                <th data-sort="crop_type" class="sortable">Crop <i class="fas fa-sort"></i></th>
+                                                <th data-sort="crop_recommendation" class="sortable">Recommended Crop <i class="fas fa-sort"></i></th>
+                                                <th data-sort="predicted_yield" class="sortable">Yield <i class="fas fa-sort"></i></th>
+                                                <th data-sort="disease_prediction" class="sortable">Disease <i class="fas fa-sort"></i></th>
+                                                <th data-sort="soil_health" class="sortable">Soil Health <i class="fas fa-sort"></i></th>
+                                                <th data-sort="farm_efficiency" class="sortable">Farm Efficiency <i class="fas fa-sort"></i></th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="historyTableBody"></tbody>
+                                    </table>
+                            </div>
+                            <div class="history-empty-state" id="historyEmptyState" hidden>
+                                <div class="history-empty-icon">
+                                    <i class="fas fa-folder-open"></i>
+                                </div>
+                                <h3>No prediction records found</h3>
+                                <p>Try a different search term or relax the active filters.</p>
+                            </div>
+                            <div class="history-loading-state" id="historyLoadingState" hidden>
+                                <div class="history-spinner"></div>
+                                <p>Loading prediction history...</p>
+                            </div>
+                            <div class="history-pagination" id="historyPagination">
+                                <button class="btn btn-outline history-page-btn" id="historyPrevPageBtn" type="button">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </button>
+                                <div class="history-pagination-info" id="historyPaginationInfo">Page 1 of 1</div>
+                                <button class="btn btn-outline history-page-btn" id="historyNextPageBtn" type="button">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+</div>
+
+                <!-- Settings Page -->
+                <div class="page" id="page-settings">
+                    <div class="settings-page">
+                        <div class="page-header">
+                            <div>
+                                <h1 class="page-title">
+                                    <i class="fas fa-cog"></i> Settings
+                                </h1>
+                                <p class="page-subtitle">Configure your dashboard preferences and integrations</p>
+                            </div>
+                        </div>
+
+                        <!-- General Settings -->
+                        <div class="settings-grid">
+                            <section class="settings-card" data-section="general">
+                                <div class="settings-card-header">
+                                    <div class="settings-card-icon">
+                                        <i class="fas fa-sliders-h"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="settings-card-title">General</h2>
+                                        <p class="settings-card-subtitle">Basic display and regional preferences</p>
+                                    </div>
+                                </div>
+                                <div class="settings-card-body">
+                                    <div class="settings-field">
+                                        <label class="settings-label" for="settingLanguage">
+                                            <i class="fas fa-globe"></i> Language
+                                        </label>
+                                        <select class="settings-select" id="settingLanguage" aria-label="Language">
+                                            <option value="en">English</option>
+                                            <option value="hi">Hindi</option>
+                                            <option value="es">Spanish</option>
+                                            <option value="fr">French</option>
+                                            <option value="de">German</option>
+                                            <option value="zh">Chinese</option>
+                                            <option value="ar">Arabic</option>
+                                            <option value="pt">Portuguese</option>
+                                        </select>
+                                        <span class="settings-hint">Interface language</span>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <label class="settings-label" for="settingUnits">
+                                            <i class="fas fa-ruler-combined"></i> Units
+                                        </label>
+                                        <div class="settings-toggle-group" role="radiogroup" aria-label="Unit system">
+                                            <label class="toggle-option" data-value="metric">
+                                                <input type="radio" name="units" value="metric" id="settingUnitsMetric" autocomplete="off">
+                                                <span class="toggle-option-content">
+                                                    <i class="fas fa-weight-hanging"></i>
+                                                    <span>Metric</span>
+                                                    <small>°C, mm, kg/ha</small>
+                                                </span>
+                                            </label>
+                                            <label class="toggle-option" data-value="imperial">
+                                                <input type="radio" name="units" value="imperial" id="settingUnitsImperial" autocomplete="off">
+                                                <span class="toggle-option-content">
+                                                    <i class="fas fa-temperature-high"></i>
+                                                    <span>Imperial</span>
+                                                    <small>°F, in, lbs/acre</small>
+                                                </span>
+                                            </label>
+                                        </div>
+                                        <span class="settings-hint">Measurement system for all data</span>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <label class="settings-label" for="settingTheme">
+                                            <i class="fas fa-palette"></i> Theme
+                                        </label>
+                                        <div class="settings-toggle-group" role="radiogroup" aria-label="Color theme">
+                                            <label class="toggle-option" data-value="light">
+                                                <input type="radio" name="theme" value="light" id="settingThemeLight" autocomplete="off">
+                                                <span class="toggle-option-content">
+                                                    <i class="fas fa-sun"></i>
+                                                    <span>Light</span>
+                                                    <small>Bright interface</small>
+                                                </span>
+                                            </label>
+                                            <label class="toggle-option" data-value="dark">
+                                                <input type="radio" name="theme" value="dark" id="settingThemeDark" autocomplete="off">
+                                                <span class="toggle-option-content">
+                                                    <i class="fas fa-moon"></i>
+                                                    <span>Dark</span>
+                                                    <small>Easy on eyes</small>
+                                                </span>
+                                            </label>
+                                            <label class="toggle-option" data-value="system">
+                                                <input type="radio" name="theme" value="system" id="settingThemeSystem" autocomplete="off">
+                                                <span class="toggle-option-content">
+                                                    <i class="fas fa-desktop"></i>
+                                                    <span>System</span>
+                                                    <small>Follow OS setting</small>
+                                                </span>
+                                            </label>
+                                        </div>
+                                        <span class="settings-hint">Appearance mode</span>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <label class="settings-label" for="settingDateFormat">
+                                            <i class="fas fa-calendar-alt"></i> Date Format
+                                        </label>
+                                        <select class="settings-select" id="settingDateFormat" aria-label="Date format">
+                                            <option value="YYYY-MM-DD">YYYY-MM-DD (2026-06-28)</option>
+                                            <option value="DD/MM/YYYY">DD/MM/YYYY (28/06/2026)</option>
+                                            <option value="MM/DD/YYYY">MM/DD/YYYY (06/28/2026)</option>
+                                            <option value="DD MMM YYYY">DD MMM YYYY (28 Jun 2026)</option>
+                                        </select>
+                                        <span class="settings-hint">Date display format across the dashboard</span>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <label class="settings-label" for="settingTimeFormat">
+                                            <i class="fas fa-clock"></i> Time Format
+                                        </label>
+                                        <div class="settings-toggle-group" role="radiogroup" aria-label="Time format">
+                                            <label class="toggle-option" data-value="24">
+                                                <input type="radio" name="timeFormat" value="24" id="settingTime24" autocomplete="off">
+                                                <span class="toggle-option-content">
+                                                    <i class="fas fa-clock"></i>
+                                                    <span>24 Hour</span>
+                                                    <small>14:30</small>
+                                                </span>
+                                            </label>
+                                            <label class="toggle-option" data-value="12">
+                                                <input type="radio" name="timeFormat" value="12" id="settingTime12" autocomplete="off">
+                                                <span class="toggle-option-content">
+                                                    <i class="fas fa-clock"></i>
+                                                    <span>12 Hour</span>
+                                                    <small>2:30 PM</small>
+                                                </span>
+                                            </label>
+                                        </div>
+                                        <span class="settings-hint">Time display format</span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Notifications Settings -->
+                            <section class="settings-card" data-section="notifications">
+                                <div class="settings-card-header">
+                                    <div class="settings-card-icon notifications-icon">
+                                        <i class="fas fa-bell"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="settings-card-title">Notifications</h2>
+                                        <p class="settings-card-subtitle">Configure alert preferences</p>
+                                    </div>
+                                </div>
+                                <div class="settings-card-body">
+                                    <div class="settings-field">
+                                        <div class="settings-toggle">
+                                            <div class="settings-toggle-info">
+                                                <label class="settings-label" for="settingNotifyEnabled">
+                                                    <i class="fas fa-bell"></i> Enable Notifications
+                                                </label>
+                                                <span class="settings-hint">Master switch for all notifications</span>
+                                            </div>
+                                            <label class="switch">
+                                                <input type="checkbox" id="settingNotifyEnabled" role="switch">
+                                                <span class="switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-divider"></div>
+
+                                    <div class="settings-field">
+                                        <div class="settings-toggle">
+                                            <div class="settings-toggle-info">
+                                                <label class="settings-label" for="settingNotifyHeat">
+                                                    <i class="fas fa-temperature-high heat-icon"></i> Heat Stress Alerts
+                                                </label>
+                                                <span class="settings-hint">Notify when temperature exceeds crop thresholds</span>
+                                            </div>
+                                            <label class="switch">
+                                                <input type="checkbox" id="settingNotifyHeat" role="switch">
+                                                <span class="switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <div class="settings-toggle">
+                                            <div class="settings-toggle-info">
+                                                <label class="settings-label" for="settingNotifyRain">
+                                                    <i class="fas fa-cloud-rain rain-icon"></i> Rain Alerts
+                                                </label>
+                                                <span class="settings-hint">Notify about rainfall predictions and flooding risks</span>
+                                            </div>
+                                            <label class="switch">
+                                                <input type="checkbox" id="settingNotifyRain" role="switch">
+                                                <span class="switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <div class="settings-toggle">
+                                            <div class="settings-toggle-info">
+                                                <label class="settings-label" for="settingNotifyDisease">
+                                                    <i class="fas fa-virus disease-icon"></i> Disease Alerts
+                                                </label>
+                                                <span class="settings-hint">Notify when disease risk is detected</span>
+                                            </div>
+                                            <label class="switch">
+                                                <input type="checkbox" id="settingNotifyDisease" role="switch">
+                                                <span class="switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <div class="settings-toggle">
+                                            <div class="settings-toggle-info">
+                                                <label class="settings-label" for="settingNotifySoil">
+                                                    <i class="fas fa-mountain soil-icon"></i> Soil Health Alerts
+                                                </label>
+                                                <span class="settings-hint">Notify when soil conditions need attention</span>
+                                            </div>
+                                            <label class="switch">
+                                                <input type="checkbox" id="settingNotifySoil" role="switch">
+                                                <span class="switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <div class="settings-toggle">
+                                            <div class="settings-toggle-info">
+                                                <label class="settings-label" for="settingNotifyIrrigation">
+                                                    <i class="fas fa-tint irrigation-icon"></i> Irrigation Alerts
+                                                </label>
+                                                <span class="settings-hint">Notify about irrigation schedule and water levels</span>
+                                            </div>
+                                            <label class="switch">
+                                                <input type="checkbox" id="settingNotifyIrrigation" role="switch">
+                                                <span class="switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <div class="settings-toggle">
+                                            <div class="settings-toggle-info">
+                                                <label class="settings-label" for="settingNotifyYield">
+                                                    <i class="fas fa-chart-line yield-icon"></i> Yield Forecast Alerts
+                                                </label>
+                                                <span class="settings-hint">Notify when new yield predictions are available</span>
+                                            </div>
+                                            <label class="switch">
+                                                <input type="checkbox" id="settingNotifyYield" role="switch">
+                                                <span class="switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <div class="settings-toggle">
+                                            <div class="settings-toggle-info">
+                                                <label class="settings-label" for="settingNotifyEmail">
+                                                    <i class="fas fa-envelope email-icon"></i> Email Notifications
+                                                </label>
+                                                <span class="settings-hint">Send notifications via email</span>
+                                            </div>
+                                            <label class="switch">
+                                                <input type="checkbox" id="settingNotifyEmail" role="switch">
+                                                <span class="switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <div class="settings-toggle">
+                                            <div class="settings-toggle-info">
+                                                <label class="settings-label" for="settingNotifyPush">
+                                                    <i class="fas fa-mobile-alt push-icon"></i> Push Notifications
+                                                </label>
+                                                <span class="settings-hint">Enable browser push notifications</span>
+                                            </div>
+                                            <label class="switch">
+                                                <input type="checkbox" id="settingNotifyPush" role="switch">
+                                                <span class="switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- API Configuration -->
+                            <section class="settings-card" data-section="api">
+                                <div class="settings-card-header">
+                                    <div class="settings-card-icon api-icon">
+                                        <i class="fas fa-key"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="settings-card-title">API Configuration</h2>
+                                        <p class="settings-card-subtitle">Backend and third-party service connections</p>
+                                    </div>
+                                </div>
+                                <div class="settings-card-body">
+                                    <div class="settings-field">
+                                        <label class="settings-label" for="settingApiUrl">
+                                            <i class="fas fa-server"></i> Backend API URL
+                                        </label>
+                                        <div class="settings-input-group">
+                                            <input type="url" class="settings-input" id="settingApiUrl" placeholder="http://localhost:5000" aria-label="Backend API URL">
+                                            <button class="btn btn-outline btn-sm" id="testApiConnection" type="button">
+                                                <i class="fas fa-plug"></i> Test
+                                            </button>
+                                        </div>
+                                        <span class="settings-hint">REST API endpoint for the prediction backend</span>
+                                        <div class="settings-status" id="apiConnectionStatus" hidden></div>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <label class="settings-label" for="settingOwmKey">
+                                            <i class="fas fa-cloud-sun"></i> OpenWeatherMap API Key
+                                        </label>
+                                        <div class="settings-input-group">
+                                            <input type="password" class="settings-input" id="settingOwmKey" placeholder="Enter your API key" aria-label="OpenWeatherMap API Key">
+                                            <button class="btn btn-outline btn-sm" type="button" id="toggleOwmKey">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline btn-sm" id="testOwmConnection" type="button">
+                                                <i class="fas fa-plug"></i> Test
+                                            </button>
+                                        </div>
+                                        <span class="settings-hint">Get a free key at <a href="https://openweathermap.org/api" target="_blank" rel="noopener">openweathermap.org</a></span>
+                                        <div class="settings-status" id="owmConnectionStatus" hidden></div>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <label class="settings-label" for="settingApiTimeout">
+                                            <i class="fas fa-hourglass-half"></i> API Timeout (seconds)
+                                        </label>
+                                        <input type="number" class="settings-input" id="settingApiTimeout" min="5" max="120" step="5" aria-label="API timeout in seconds">
+                                        <span class="settings-hint">Request timeout for API calls</span>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <div class="settings-toggle">
+                                            <div class="settings-toggle-info">
+                                                <label class="settings-label" for="settingApiCache">
+                                                    <i class="fas fa-database"></i> Enable API Caching
+                                                </label>
+                                                <span class="settings-hint">Cache API responses to reduce server load</span>
+                                            </div>
+                                            <label class="switch">
+                                                <input type="checkbox" id="settingApiCache" role="switch">
+                                                <span class="switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Data & Privacy -->
+                            <section class="settings-card" data-section="data">
+                                <div class="settings-card-header">
+                                    <div class="settings-card-icon data-icon">
+                                        <i class="fas fa-database"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="settings-card-title">Data & Privacy</h2>
+                                        <p class="settings-card-subtitle">Manage your data storage and privacy preferences</p>
+                                    </div>
+                                </div>
+                                <div class="settings-card-body">
+                                    <div class="settings-field">
+                                        <div class="settings-toggle">
+                                            <div class="settings-toggle-info">
+                                                <label class="settings-label" for="settingDataSync">
+                                                    <i class="fas fa-sync-alt"></i> Auto-sync with Backend
+                                                </label>
+                                                <span class="settings-hint">Automatically sync settings and predictions with server</span>
+                                            </div>
+                                            <label class="switch">
+                                                <input type="checkbox" id="settingDataSync" role="switch">
+                                                <span class="switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <div class="settings-toggle">
+                                            <div class="settings-toggle-info">
+                                                <label class="settings-label" for="settingDataLocalStorage">
+                                                    <i class="fas fa-hard-drive"></i> Local Storage Backup
+                                                </label>
+                                                <span class="settings-hint">Keep a local backup of all settings and history</span>
+                                            </div>
+                                            <label class="switch">
+                                                <input type="checkbox" id="settingDataLocalStorage" role="switch">
+                                                <span class="switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <div class="settings-toggle">
+                                            <div class="settings-toggle-info">
+                                                <label class="settings-label" for="settingDataAnalytics">
+                                                    <i class="fas fa-chart-bar"></i> Usage Analytics
+                                                </label>
+                                                <span class="settings-hint">Help improve the dashboard with anonymous usage data</span>
+                                            </div>
+                                            <label class="switch">
+                                                <input type="checkbox" id="settingDataAnalytics" role="switch">
+                                                <span class="switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <label class="settings-label" for="settingHistoryRetention">
+                                            <i class="fas fa-clock-rotate-left"></i> History Retention (days)
+                                        </label>
+                                        <input type="number" class="settings-input" id="settingHistoryRetention" min="7" max="365" step="1" aria-label="History retention in days">
+                                        <span class="settings-hint">How long to keep prediction history locally</span>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <div class="settings-actions">
+                                            <button class="btn btn-outline" id="exportSettingsBtn" type="button">
+                                                <i class="fas fa-download"></i> Export Settings
+                                            </button>
+                                            <button class="btn btn-outline" id="importSettingsBtn" type="button">
+                                                <i class="fas fa-upload"></i> Import Settings
+                                            </button>
+                                            <input type="file" id="importSettingsFile" accept=".json" hidden>
+                                        </div>
+                                        <span class="settings-hint">Backup and restore your configuration</span>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <div class="settings-actions danger">
+                                            <button class="btn btn-outline btn-danger" id="clearHistoryBtn" type="button">
+                                                <i class="fas fa-trash"></i> Clear Local History
+                                            </button>
+                                            <button class="btn btn-outline btn-danger" id="resetSettingsBtn" type="button">
+                                                <i class="fas fa-undo"></i> Reset All Settings
+                                            </button>
+                                        </div>
+                                        <span class="settings-hint">Dangerous actions - cannot be undone</span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Advanced Settings -->
+                            <section class="settings-card" data-section="advanced">
+                                <div class="settings-card-header">
+                                    <div class="settings-card-icon advanced-icon">
+                                        <i class="fas fa-cogs"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="settings-card-title">Advanced</h2>
+                                        <p class="settings-card-subtitle">Developer and power user options</p>
+                                    </div>
+                                </div>
+                                <div class="settings-card-body">
+                                    <div class="settings-field">
+                                        <div class="settings-toggle">
+                                            <div class="settings-toggle-info">
+                                                <label class="settings-label" for="settingDevMode">
+                                                    <i class="fas fa-code"></i> Developer Mode
+                                                </label>
+                                                <span class="settings-hint">Show debug info, console logs, and advanced options</span>
+                                            </div>
+                                            <label class="switch">
+                                                <input type="checkbox" id="settingDevMode" role="switch">
+                                                <span class="switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <div class="settings-toggle">
+                                            <div class="settings-toggle-info">
+                                                <label class="settings-label" for="settingAnimations">
+                                                    <i class="fas fa-magic"></i> Animations
+                                                </label>
+                                                <span class="settings-hint">Enable UI animations and transitions</span>
+                                            </div>
+                                            <label class="switch">
+                                                <input type="checkbox" id="settingAnimations" role="switch">
+                                                <span class="switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <div class="settings-toggle">
+                                            <div class="settings-toggle-info">
+                                                <label class="settings-label" for="settingReducedMotion">
+                                                    <i class="fas fa-accessible-icon"></i> Reduce Motion
+                                                </label>
+                                                <span class="settings-hint">Minimize animations for accessibility</span>
+                                            </div>
+                                            <label class="switch">
+                                                <input type="checkbox" id="settingReducedMotion" role="switch">
+                                                <span class="switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <label class="settings-label" for="settingLogLevel">
+                                            <i class="fas fa-terminal"></i> Log Level
+                                        </label>
+                                        <select class="settings-select" id="settingLogLevel" aria-label="Log level">
+                                            <option value="error">Error Only</option>
+                                            <option value="warn">Warnings & Errors</option>
+                                            <option value="info">Info, Warnings & Errors</option>
+                                            <option value="debug">Debug (Verbose)</option>
+                                        </select>
+                                        <span class="settings-hint">Console logging verbosity</span>
+                                    </div>
+
+                                    <div class="settings-field">
+                                        <label class="settings-label" for="settingRefreshInterval">
+                                            <i class="fas fa-sync"></i> Auto-refresh Interval (seconds)
+                                        </label>
+                                        <input type="number" class="settings-input" id="settingRefreshInterval" min="0" max="3600" step="30" aria-label="Auto-refresh interval in seconds">
+                                        <span class="settings-hint">Set to 0 to disable auto-refresh</span>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <!-- Save Actions -->
+                        <div class="settings-actions-bar">
+                            <button class="btn btn-outline" id="settingsCancelBtn" type="button">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button class="btn btn-primary" id="settingsSaveBtn" type="button">
+                                <i class="fas fa-save"></i> Save Settings
+                            </button>
+                        </div>
+
+                        <!-- Status Toast Container -->
+                        <div class="settings-toast-container" id="settingsToastContainer"></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer -->
+            <footer class="footer">
+                <p>&copy; 2026 AgriSense - Smart Agriculture Dashboard. All rights reserved.</p>
+                <div class="footer-links">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Notification Panel -->
+    <div class="notification-panel" id="notificationPanel">
+        <div class="notification-header">
+            <h3>Notifications</h3>
+            <button class="btn-close" id="notificationsClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="notification-list">
+            <div class="notification-item unread">
+                <div class="notification-icon warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="notification-content">
+                    <p>Heat stress alert triggered for Field #2</p>
+                    <span>5 minutes ago</span>
+                </div>
+            </div>
+            <div class="notification-item unread">
+                <div class="notification-icon info">
+                    <i class="fas fa-tint"></i>
+                </div>
+                <div class="notification-content">
+                    <p>Irrigation scheduled for tomorrow at 6:00 AM</p>
+                    <span>1 hour ago</span>
+                </div>
+            </div>
+            <div class="notification-item unread">
+                <div class="notification-icon success">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="notification-content">
+                    <p>Soil health report for Field #5 is ready</p>
+                    <span>3 hours ago</span>
+                </div>
+            </div>
+            <div class="notification-item">
+                <div class="notification-icon info">
+                    <i class="fas fa-cloud-sun"></i>
+                </div>
+                <div class="notification-content">
+                    <p>Weather forecast updated - Rain expected tomorrow</p>
+                    <span>6 hours ago</span>
+                </div>
+            </div>
+            <div class="notification-item">
+                <div class="notification-icon success">
+                    <i class="fas fa-seedling"></i>
+                </div>
+                <div class="notification-content">
+                    <p>Crop yield prediction for Q2 is available</p>
+                    <span>1 day ago</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Custom JS -->
+    <script src="js/perf.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/weather.js"></script>
+    <script src="js/sidebar.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/history.js"></script>
+    <script src="js/reports.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
