@@ -83,49 +83,45 @@ const Sidebar = {
         const navLinks = document.querySelectorAll('.nav-link');
         const pages = document.querySelectorAll('.page');
 
+        const activatePage = (pageId, updateHistory = true) => {
+            if (!pageId) return;
+            const link = document.querySelector(`[data-page="${pageId}"]`);
+            if (!link) return;
+
+            navLinks.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+            pages.forEach(p => p.classList.remove('active'));
+            document.getElementById(`page-${pageId}`)?.classList.add('active');
+
+            if (updateHistory && window.location.hash !== `#${pageId}`) {
+                history.pushState(null, '', `#${pageId}`);
+            }
+
+            Perf.scheduleIdle(() => {
+                window.dispatchEvent(new Event('hashchange'));
+            });
+            if (window.innerWidth <= 768) this.closeMobile();
+        };
+
         navLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-
-                const pageId = link.dataset.page || link.getAttribute('href')?.slice(1);
-
-                // Update active link
-                navLinks.forEach(l => l.classList.remove('active'));
-                link.classList.add('active');
-
-                // Show corresponding page
-                if (pageId) {
-                    pages.forEach(p => p.classList.remove('active'));
-                    const targetPage = document.getElementById(`page-${pageId}`);
-                    if (targetPage) targetPage.classList.add('active');
-                }
-
-                // Update URL hash
-                history.pushState(null, '', `#${pageId}`);
-
-                Perf.scheduleIdle(() => {
-                    window.dispatchEvent(new Event('hashchange'));
-                });
-
-                // Close mobile menu
-                if (window.innerWidth <= 768) this.closeMobile();
+                activatePage(link.dataset.page || link.getAttribute('href')?.slice(1), true);
             });
         });
 
         // Handle back/forward browser navigation
         window.addEventListener('popstate', () => {
             const hash = window.location.hash.replace('#', '') || 'dashboard';
-            const link = document.querySelector(`[data-page="${hash}"]`);
-            if (link) link.click();
+            activatePage(hash, false);
         });
+
+        this.activatePage = activatePage;
     },
 
     // Highlight current nav based on hash on page load
     highlightCurrent() {
         const hash = window.location.hash.replace('#', '') || 'dashboard';
-        const link = document.querySelector(`[data-page="${hash}"]`);
-        if (link) {
-            link.click();
-        }
+        if (typeof this.activatePage === 'function') this.activatePage(hash, false);
     },
 };

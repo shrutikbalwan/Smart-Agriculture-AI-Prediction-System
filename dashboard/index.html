@@ -126,7 +126,7 @@
                     </div>
 
                     <div class="header-item profile-dropdown" id="profileDropdown">
-                        <div class="profile-avatar" id="profileAvatar">
+                        <div class="profile-avatar" id="profileAvatar" role="button" tabindex="0" aria-label="Open profile menu">
                             <i class="fas fa-user"></i>
                         </div>
                         <div class="profile-menu" id="profileMenu">
@@ -182,6 +182,7 @@
                             <div class="prediction-field">
                                 <label for="region">Region</label>
                                 <select id="region" aria-label="Select region">
+                                    <option value="" selected disabled>Select region</option>
                                     <option>North India</option>
                                     <option>South India</option>
                                     <option>East Africa</option>
@@ -191,6 +192,7 @@
                             <div class="prediction-field">
                                 <label for="crop_type">Crop Type</label>
                                 <select id="crop_type" aria-label="Select crop type">
+                                    <option value="" selected disabled>Select crop type</option>
                                     <option>Rice</option>
                                     <option>Wheat</option>
                                     <option>Cotton</option>
@@ -231,6 +233,7 @@
                             <div class="prediction-field">
                                 <label for="irrigation_type">Irrigation Type</label>
                                 <select id="irrigation_type" aria-label="Select irrigation type">
+                                    <option value="" selected disabled>Select irrigation type</option>
                                     <option>Drip</option>
                                     <option>Sprinkler</option>
                                     <option>Manual</option>
@@ -239,6 +242,7 @@
                             <div class="prediction-field">
                                 <label for="fertilizer_type">Fertilizer Type</label>
                                 <select id="fertilizer_type" aria-label="Select fertilizer type">
+                                    <option value="" selected disabled>Select fertilizer type</option>
                                     <option>Organic</option>
                                     <option>Inorganic</option>
                                     <option>Mixed</option>

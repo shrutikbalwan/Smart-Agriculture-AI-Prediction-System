@@ -116,6 +116,7 @@ const SettingsPage = {
     };
 
     localStorage.setItem('agrisense_settings', JSON.stringify(settings));
+    if (typeof APICache !== 'undefined') APICache.invalidate();
 
     if (settings.theme === 'dark') ThemeManager.setDark();
     else if (settings.theme === 'light') ThemeManager.setLight();
@@ -139,7 +140,8 @@ const SettingsPage = {
     statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing connection...';
 
     try {
-      const response = await fetch(`${url}/api/health`, { signal: AbortSignal.timeout(5000) });
+      const normalizedUrl = String(url).replace(/\/+$/, '');
+      const response = await fetch(`${normalizedUrl}/health`, { signal: AbortSignal.timeout(5000) });
       if (!response.ok) throw new Error('Connection failed');
       statusEl.className = 'settings-status success';
       statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Connection successful';

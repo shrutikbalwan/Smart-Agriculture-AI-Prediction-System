@@ -36,11 +36,16 @@ const App = {
         document.getElementById('exportBtn')?.addEventListener('click', () => this.exportData());
         document.getElementById('notificationsBtn')?.addEventListener('click', () => this.toggleNotifications());
         document.getElementById('notificationsClose')?.addEventListener('click', () => this.toggleNotifications(false));
+        document.getElementById('overlay')?.addEventListener('click', () => this.toggleNotifications(false));
 
         document.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
                 e.preventDefault();
                 this.refreshDashboard();
+            }
+            if (e.key === 'Escape') {
+                this.toggleNotifications(false);
+                document.getElementById('profileMenu')?.classList.remove('open');
             }
         });
 
@@ -58,6 +63,20 @@ const App = {
             const menu = document.getElementById('profileMenu');
             menu?.classList.toggle('open');
         });
+
+        const bindActionKey = (id, handler) => {
+            document.getElementById(id)?.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handler(e);
+                }
+            });
+        };
+
+        bindActionKey('profileAvatar', (e) => e.currentTarget.click());
+        bindActionKey('notificationsBtn', (e) => e.currentTarget.click());
+        bindActionKey('themeToggle', () => ThemeManager.toggle());
+
         document.addEventListener('click', () => {
             document.getElementById('profileMenu')?.classList.remove('open');
         });

@@ -3,7 +3,7 @@
    with response caching & stale-while-revalidate
    ============================================ */
 
-const API_URL = "http://127.0.0.1:5000";
+const DEFAULT_API_URL = 'http://127.0.0.1:5000';
 
 const APICache = {
   _store: new Map(),
@@ -54,9 +54,40 @@ const APICache = {
 };
 
 const API = {
+    getSettings() {
+        try {
+            return JSON.parse(localStorage.getItem('agrisense_settings') || '{}');
+        } catch {
+            return {};
+        }
+    },
+
+    getBaseUrl() {
+        const settings = this.getSettings();
+        const configured = settings.apiUrl || window.AGRISENSE_API_URL || DEFAULT_API_URL;
+        return String(configured).replace(/\/+$/, '');
+    },
+
+    getTimeoutMs() {
+        const settings = this.getSettings();
+        const timeoutSeconds = Number(settings.apiTimeout);
+        return Number.isFinite(timeoutSeconds) && timeoutSeconds > 0 ? timeoutSeconds * 1000 : 30000;
+    },
+
+    async fetchWithTimeout(path, options = {}) {
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), this.getTimeoutMs());
+        try {
+            const baseUrl = this.getBaseUrl();
+            return await fetch(`${baseUrl}${path}`, { ...options, signal: controller.signal });
+        } finally {
+            window.clearTimeout(timeout);
+        }
+    },
+
     async predictFarm(data) {
         try {
-            const response = await fetch(`${API_URL}/predict`, {
+            const response = await this.fetchWithTimeout('/predict', {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data)
@@ -73,7 +104,7 @@ const API = {
 
     async getDashboardStats() {
         return APICache.fetch('dashboard:stats', async () => {
-            const response = await fetch(`${API_URL}/dashboard/stats`);
+            const response = await this.fetchWithTimeout('/dashboard/stats');
             if (!response.ok) throw new Error(`Server Error : ${response.status}`);
             return response.json();
         }, 15000);
@@ -88,7 +119,8 @@ const API = {
         });
         const cacheKey = `history:${query.toString()}`;
         return APICache.fetch(cacheKey, async () => {
-            const response = await fetch(`${API_URL}/history?${query.toString()}`);
+            const suffix = query.toString() ? `?${query.toString()}` : '';
+            const response = await this.fetchWithTimeout(`/history${suffix}`);
             if (!response.ok) throw new Error(`Server Error : ${response.status}`);
             return response.json();
         }, 10000);
@@ -96,7 +128,7 @@ const API = {
 
     async getPredictionHistoryMeta() {
         return APICache.fetch('history:meta', async () => {
-            const response = await fetch(`${API_URL}/history/meta`);
+            const response = await this.fetchWithTimeout('/history/meta');
             if (!response.ok) throw new Error(`Server Error : ${response.status}`);
             return response.json();
         }, 60000);
@@ -104,7 +136,7 @@ const API = {
 
     async deletePredictionHistoryEntry(id) {
         try {
-            const response = await fetch(`${API_URL}/history/${id}`, { method: "DELETE" });
+            const response = await this.fetchWithTimeout(`/history/${id}`, { method: "DELETE" });
             if (!response.ok) throw new Error(`Server Error : ${response.status}`);
             APICache.invalidate('history');
             APICache.invalidate('dashboard');
