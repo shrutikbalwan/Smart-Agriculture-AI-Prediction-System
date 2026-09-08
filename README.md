@@ -392,6 +392,7 @@ smart-agriculture/
 ├── docker-compose.yml                # MySQL + Backend + Nginx orchestration
 ├── Dockerfile                        # Flask/Gunicorn container image
 ├── nginx.conf                        # Nginx reverse-proxy configuration
+├── evaluate_model.py                 # Reproducible model evaluation entry point
 ├── requirements.txt                  # Python dependency manifest
 ├── .env.example                      # Environment variable template
 ├── .env                              # Local environment variables (gitignored)
@@ -928,7 +929,23 @@ All models are trained using **scikit-learn's RandomForest** algorithm. Nine are
 | Rain Impact | RandomForest | Classifier | region, crop, soil_moisture, pH, temperature, rainfall, humidity, sunlight, irrigation, fertilizer, pesticide, days, lat, lon, NDVI | Low / Medium / High | — | — |
 | Farm Efficiency | RandomForest | Classifier | region, crop, soil_moisture, pH, temperature, rainfall, humidity, sunlight, irrigation, fertilizer, pesticide, days, lat, lon, NDVI | Excellent / Good / Average / Poor | — | — |
 
-> **Note:** Accuracy metrics and dataset sources will be added after formal model evaluation using cross-validation on the held-out test set. See `report/model_evaluation.py` for current evaluation scripts.
+### Reproducible Evaluation Workflow
+
+Use the command below to run a deterministic evaluation across the project models:
+
+```bash
+python evaluate_model.py
+```
+
+What the command reports:
+- **Classification models** (crop recommendation, irrigation planning, disease/soil/rain/farm classifiers): accuracy, precision, recall, F1-score, classification report, and confusion matrix (printed + image saved to `report/figures/`).
+- **Regression model** (yield prediction): MAE, RMSE, and R².
+
+Reproducibility settings:
+- Fixed split: `test_size=0.20`
+- Fixed seed: `random_state=42`
+
+If a model file or required column is missing, that model is skipped with a clear message and the remaining models continue evaluation.
 
 ---
 
