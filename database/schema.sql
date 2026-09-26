@@ -109,3 +109,42 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   INDEX idx_logs_created (created_at),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
+
+-- ===================== FIELD DEVICES (v2) =====================
+-- Each ESP32 node is registered with its farm context so it never has to
+-- guess region/crop. Only a SHA-256 hash of the device key is stored.
+
+CREATE TABLE IF NOT EXISTS devices (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  device_uid VARCHAR(32) UNIQUE NOT NULL,
+  api_key_hash CHAR(64) UNIQUE NOT NULL,
+  owner_user_id INT DEFAULT NULL,
+  name VARCHAR(100) NOT NULL,
+  crop VARCHAR(50) NOT NULL,
+  sowing_date DATE NOT NULL,
+  soil_texture VARCHAR(30) NOT NULL,
+  area_m2 DECIMAL(12,2) NOT NULL,
+  irrigation_method VARCHAR(20) NOT NULL DEFAULT 'drip',
+  latitude DECIMAL(10,7) DEFAULT NULL,
+  longitude DECIMAL(10,7) DEFAULT NULL,
+  elevation_m DECIMAL(7,1) DEFAULT 0,
+  pump_flow_lph DECIMAL(10,2) DEFAULT NULL,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_devices_owner (owner_user_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS sensor_readings (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  device_id INT NOT NULL,
+  soil_vwc_pct DECIMAL(5,2) DEFAULT NULL,
+  air_temp_c DECIMAL(5,2) DEFAULT NULL,
+  air_rh_pct DECIMAL(5,2) DEFAULT NULL,
+  rain_mm DECIMAL(6,2) DEFAULT NULL,
+  battery_v DECIMAL(4,2) DEFAULT NULL,
+  firmware VARCHAR(20) DEFAULT NULL,
+  received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
+  INDEX idx_readings_device_time (device_id, received_at)
+) ENGINE=InnoDB;
