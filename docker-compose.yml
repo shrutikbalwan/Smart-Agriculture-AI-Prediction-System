@@ -32,6 +32,8 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       OPENWEATHERMAP_API_KEY: ${OPENWEATHERMAP_API_KEY}
       FLASK_DEBUG: "false"
+      APP_ENV: production
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
     depends_on:
       db:
         condition: service_healthy

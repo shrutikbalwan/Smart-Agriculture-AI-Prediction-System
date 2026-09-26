@@ -24,7 +24,7 @@
   <a href="#"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License MIT"></a>
   <a href="#"><img src="https://img.shields.io/badge/Status-Active-success?style=flat-square" alt="Status Active"></a>
   <a href="#"><img src="https://img.shields.io/badge/Last%20Commit-June%202026-blue?style=flat-square" alt="Last Commit"></a>
-  <a href="#"><img src="https://img.shields.io/badge/Tests-84%20passing-brightgreen?style=flat-square" alt="Tests 84 passing"></a>
+  <a href="#"><img src="https://img.shields.io/badge/Tests-119%20passing-brightgreen?style=flat-square" alt="Tests 119 passing"></a>
 </p>
 
 ---
@@ -81,7 +81,7 @@ Traditional farming relies on intuition and experience, but climate change, soil
 - **10 AI models** in a single inference pipeline — one API call returns everything
 - **Real-time hardware integration** — ESP32 sensors feed live field data directly
 - **Production-ready** — Docker Compose deployment with Nginx, Gunicorn, MySQL
-- **Fully tested** — 84 unit tests covering every endpoint, error path, and DB failure
+- **Fully tested** — 119 unit tests covering every endpoint, error path, and DB failure
 - **Open source** — MIT licensed, free to use, modify, and distribute
 
 ### Target Users
@@ -318,7 +318,7 @@ smart-agriculture/
 │   ├── app.py                        # 13 REST API routes & ML pipeline
 │   ├── db.py                         # MySQL connection manager (singleton)
 │   ├── check_models.py               # Model feature verification utility
-│   ├── test_all.py                   # 84 comprehensive unit tests
+│   ├── test_all.py                   # legacy endpoint tests (test_agronomy.py, test_v2.py cover v2)
 │   └── test_predict_endpoint.py      # Legacy unit test (1 test)
 │
 ├── dashboard/                        # Frontend Single-Page Application
@@ -912,7 +912,47 @@ Authorization: Bearer <jwt_token> (optional)
 
 ---
 
+## 🌱 v2: Agronomy Engine and Field Devices
+
+v2 adds an explainable irrigation engine and a proper device workflow, aimed at real farm deployment. The full plan is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
+**How irrigation is decided** ([`backend/agronomy.py`](backend/agronomy.py)):
+
+1. **Crop water use:** FAO-56 Penman-Monteith reference evapotranspiration (ET₀) × crop coefficient (Kc) for the current growth stage. Validated against FAO-56 worked examples (Example 18: 3.88 vs 3.9 mm/day).
+2. **Soil water balance:** with a calibrated soil-moisture reading, irrigate only when root-zone depletion exceeds the readily available water (RAW = p × TAW), and refill to field capacity.
+3. **Rain:** effective rain today and the 48-hour forecast (OpenWeatherMap) reduce or postpone irrigation.
+4. **Volume:** net mm ÷ application efficiency × area × wetted fraction → litres → pump minutes, capped for safety.
+
+Every answer includes the reasons and the numbers used, so a farmer or agronomist can check it.
+
+Supported crops: sugarcane, sorghum (jowar), onion, grapes, pomegranate, cotton, maize, wheat, rice, soybean. Soils: sand, sandy loam, loam, clay loam, clay/black cotton soil. Crop and soil values are FAO-56 typical values and **must be calibrated locally**.
+
+**Endpoints**
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| GET | `/v2/crops` | none | Supported crops, soils, irrigation methods |
+| POST | `/v2/advise` | JWT | Irrigation advice from explicit inputs |
+| POST | `/v2/devices` | JWT | Register a field node with its farm context; returns the device key once |
+| POST | `/v2/telemetry` | `X-Device-Key` | Node posts readings, receives a pump command |
+
+Example:
+
+```bash
+curl -X POST http://localhost:5000/v2/advise \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"crop":"onion","sowing_date":"2026-01-01","soil_texture":"clay","area_m2":1000,
+       "irrigation_method":"drip","soil_vwc_pct":25,"latitude":17.66,
+       "weather":{"t_max":34,"t_min":18,"rh_mean":45},"pump_flow_lph":1000}'
+```
+
+**Field node (firmware v2):** Wi-Fi, server URL and device key are set in a captive portal (no hardcoded credentials). The node sends calibrated soil moisture, air temperature/humidity, rain and battery voltage, and enforces its own pump safety limits (max run time, minimum rest, saturation cutoff, local fallback when offline for 6 h). Unsent readings are kept in flash. Calibrate the soil probe with `CAL DRY <vwc>` and `CAL WET <vwc>` over serial.
+
+---
+
 ## 🤖 AI Models
+
+> ⚠️ **Status: demo only.** The models below are trained on a synthetic dataset (`data/smart_agriculture_master_dataset_20000.csv`). Its region labels and coordinates are not consistent with real geography, several targets are simple thresholds of one feature (heat stress, soil health, irrigation time, rain impact), and disease status is close to random. Treat `/predict` outputs as a UI demo, not agronomic advice. Irrigation decisions should use `/v2/advise`. Replacing these models with ones trained on real field data is Phase 2 of the roadmap.
 
 All models are trained using **scikit-learn's RandomForest** algorithm. Nine are classifiers, one is a regressor.
 
@@ -1022,6 +1062,8 @@ The full schema is in `database/schema.sql` (5 tables, InnoDB engine, utf8mb4 ch
 
 ## 🔧 Hardware
 
+> Firmware v2 (`esp32/src/main.cpp`) replaces the v1 design described below: the OLED, BH1750, GPS and analog pH are removed, and configuration moves to a captive portal. See the v2 section above.
+
 ### ESP32 Architecture
 
 The ESP32 acts as an on-field data collection node. It reads environmental sensor data, displays readings on an OLED screen, and sends the data to the Flask backend via HTTP POST. The firmware supports three operating modes:
@@ -1130,7 +1172,7 @@ To run locally, follow the [Installation](#-installation) instructions above.
 
 | Suite | File | Tests | Type | Dependencies | Command |
 |-------|------|-------|------|-------------|---------|
-| **Comprehensive Unit Tests** | `backend/test_all.py` | **84** | Unit (unittest) | None (fully mocked) | `python -m backend.test_all` |
+| **Comprehensive Unit Tests** | `backend/test_all.py` | **87** | Unit (unittest) | None (fully mocked) | `python -m backend.test_all` |
 | **Legacy Unit Test** | `backend/test_predict_endpoint.py` | 1 | Unit (unittest) | None (uses real models) | `python -m unittest backend.test_predict_endpoint` |
 | **Integration Tests** | `test_comprehensive.py` | 20 | Integration (urllib) | Running Flask server | `python test_comprehensive.py` |
 | **Legacy Smoke Test** | `test_api.py` | 1 | Ad-hoc | Running Flask server | `python test_api.py` |
@@ -1179,7 +1221,7 @@ python test_comprehensive.py
 | **Model load time** | ~3 s | 10 .pkl files at startup |
 | **Frontend bundle size** | ~250 KB | Vite production build |
 | **ESP32 upload interval** | 30 s | Configurable |
-| **Test coverage** | 84 tests | All endpoints, error paths, DB failures |
+| **Test coverage** | 119 tests | All endpoints, error paths, DB failures, FAO-56 checks |
 
 > *Benchmarks were measured on a standard development machine. Production throughput will vary based on infrastructure and workload.*
 
@@ -1198,7 +1240,7 @@ python test_comprehensive.py
 - [x] CSV & Excel report export
 - [x] ESP32 firmware with 7 sensors
 - [x] Docker Compose deployment
-- [x] Comprehensive test suite (84 tests)
+- [x] Comprehensive test suite (119 tests)
 
 ### Phase 2 — Enhancement 🚧 (In Progress)
 - [ ] Real-time sensor dashboard (WebSocket)
@@ -1309,7 +1351,7 @@ A: AgriSense is an AI-powered precision farming platform that provides crop reco
 A: No. The dashboard and API work independently for manual data entry. The ESP32 is optional for automated sensor data collection.
 
 **Q: Is this production-ready?**  
-A: Yes. The project includes Docker Compose deployment with Gunicorn, Nginx, and MySQL. It has 84 unit tests and handles database failures gracefully.
+A: Yes. The project includes Docker Compose deployment with Gunicorn, Nginx, and MySQL. It has 119 unit tests and handles database failures gracefully.
 
 ### Technical
 
