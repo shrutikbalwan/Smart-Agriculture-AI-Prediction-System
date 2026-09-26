@@ -9,6 +9,12 @@ from unittest.mock import MagicMock, call, patch
 import pandas as pd
 
 from app import app
+from flask_jwt_extended import create_access_token
+
+
+def auth_headers(user_id="1"):
+    with app.app_context():
+        return {"Authorization": f"Bearer {create_access_token(identity=user_id)}"}
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(TEST_DIR, ".."))
@@ -838,7 +844,7 @@ class TestHistoryDelete(unittest.TestCase):
                 cursor.fetchone.return_value = {}
         cursor.execute.side_effect = del_exec
         mock_db.return_value = mock_db_ok(cursor)
-        resp = self.client.delete("/history/1")
+        resp = self.client.delete("/history/1", headers=auth_headers())
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(resp.get_json()["success"])
         self.assertEqual(resp.get_json()["deleted_id"], 1)
@@ -857,21 +863,24 @@ class TestHistoryDelete(unittest.TestCase):
                 cursor.fetchone.return_value = {}
         cursor.execute.side_effect = nf_exec
         mock_db.return_value = mock_db_ok(cursor)
-        resp = self.client.delete("/history/99999")
+        resp = self.client.delete("/history/99999", headers=auth_headers())
         self.assertEqual(resp.status_code, 404)
         self.assertIn("Record not found", resp.get_json()["error"])
+
+    def test_delete_requires_token(self):
+        self.assertEqual(self.client.delete("/history/1").status_code, 401)
 
     @patch("app.get_db")
     def test_delete_db_unavailable(self, mock_db):
         mock_db.return_value = mock_db_unavail()
-        self.assertEqual(self.client.delete("/history/1").status_code, 503)
+        self.assertEqual(self.client.delete("/history/1", headers=auth_headers()).status_code, 503)
 
     @patch("app.get_db")
     def test_delete_db_error(self, mock_db):
         cursor = make_query_cursor()
         cursor.execute.side_effect = Exception("DB error")
         mock_db.return_value = mock_db_ok(cursor)
-        self.assertEqual(self.client.delete("/history/1").status_code, 500)
+        self.assertEqual(self.client.delete("/history/1", headers=auth_headers()).status_code, 500)
 
 
 # =============================================================================
@@ -951,7 +960,7 @@ class TestExportCSV(unittest.TestCase):
     @patch("app.get_db")
     def test_export_csv_success(self, mock_db):
         mock_db.return_value = mock_db_ok()
-        resp = self.client.get("/export/csv")
+        resp = self.client.get("/export/csv", headers=auth_headers())
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.mimetype, "text/csv")
         self.assertIn("attachment", resp.headers.get("Content-Disposition", ""))
@@ -969,21 +978,25 @@ class TestExportCSV(unittest.TestCase):
                 cursor.fetchone.return_value = {}
         cursor.execute.side_effect = empty_exec
         mock_db.return_value = mock_db_ok(cursor)
-        resp = self.client.get("/export/csv")
+        resp = self.client.get("/export/csv", headers=auth_headers())
         self.assertEqual(resp.status_code, 200)
         self.assertIn("text/csv", resp.mimetype)
+
+    def test_export_requires_token(self):
+        self.assertEqual(self.client.get("/export/csv").status_code, 401)
+        self.assertEqual(self.client.get("/export/excel").status_code, 401)
 
     @patch("app.get_db")
     def test_export_csv_db_unavailable(self, mock_db):
         mock_db.return_value = mock_db_unavail()
-        self.assertEqual(self.client.get("/export/csv").status_code, 503)
+        self.assertEqual(self.client.get("/export/csv", headers=auth_headers()).status_code, 503)
 
     @patch("app.get_db")
     def test_export_csv_db_error(self, mock_db):
         cursor = make_query_cursor()
         cursor.execute.side_effect = Exception("DB error")
         mock_db.return_value = mock_db_ok(cursor)
-        self.assertEqual(self.client.get("/export/csv").status_code, 500)
+        self.assertEqual(self.client.get("/export/csv", headers=auth_headers()).status_code, 500)
 
 
 # =============================================================================
@@ -996,7 +1009,7 @@ class TestExportExcel(unittest.TestCase):
     @patch("app.get_db")
     def test_export_excel_success(self, mock_db):
         mock_db.return_value = mock_db_ok()
-        resp = self.client.get("/export/excel")
+        resp = self.client.get("/export/excel", headers=auth_headers())
         self.assertEqual(resp.status_code, 200)
         self.assertIn("spreadsheet", resp.mimetype)
         self.assertIn("attachment", resp.headers.get("Content-Disposition", ""))
@@ -1014,20 +1027,20 @@ class TestExportExcel(unittest.TestCase):
                 cursor.fetchone.return_value = {}
         cursor.execute.side_effect = empty_exec
         mock_db.return_value = mock_db_ok(cursor)
-        resp = self.client.get("/export/excel")
+        resp = self.client.get("/export/excel", headers=auth_headers())
         self.assertEqual(resp.status_code, 200)
 
     @patch("app.get_db")
     def test_export_excel_db_unavailable(self, mock_db):
         mock_db.return_value = mock_db_unavail()
-        self.assertEqual(self.client.get("/export/excel").status_code, 503)
+        self.assertEqual(self.client.get("/export/excel", headers=auth_headers()).status_code, 503)
 
     @patch("app.get_db")
     def test_export_excel_db_error(self, mock_db):
         cursor = make_query_cursor()
         cursor.execute.side_effect = Exception("DB error")
         mock_db.return_value = mock_db_ok(cursor)
-        self.assertEqual(self.client.get("/export/excel").status_code, 500)
+        self.assertEqual(self.client.get("/export/excel", headers=auth_headers()).status_code, 500)
 
 
 # =============================================================================
@@ -1040,11 +1053,11 @@ class TestDatabaseConnectionLoss(unittest.TestCase):
     def _assert_503(self, method, path, body=None):
         with patch("app.get_db", return_value=mock_db_unavail()):
             if method == "GET":
-                resp = self.client.get(path)
+                resp = self.client.get(path, headers=auth_headers())
             elif method == "POST":
-                resp = self.client.post(path, json=body or {})
+                resp = self.client.post(path, json=body or {}, headers=auth_headers())
             elif method == "DELETE":
-                resp = self.client.delete(path)
+                resp = self.client.delete(path, headers=auth_headers())
             else:
                 self.fail(f"Bad method {method}")
             self.assertEqual(resp.status_code, 503)
@@ -1153,10 +1166,10 @@ class TestFunctionalFlow(unittest.TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertEqual(len(resp.get_json()["data"]), 2)
 
-            resp = self.client.get("/export/csv")
+            resp = self.client.get("/export/csv", headers=auth_headers())
             self.assertEqual(resp.status_code, 200)
 
-            resp = self.client.get("/export/excel")
+            resp = self.client.get("/export/excel", headers=auth_headers())
             self.assertEqual(resp.status_code, 200)
 
         cursor = make_query_cursor()
@@ -1172,7 +1185,7 @@ class TestFunctionalFlow(unittest.TestCase):
                 cursor.fetchone.return_value = {}
         cursor.execute.side_effect = del_exec
         with patch("app.get_db", return_value=mock_db_ok(cursor)):
-            resp = self.client.delete("/history/1")
+            resp = self.client.delete("/history/1", headers=auth_headers())
             self.assertEqual(resp.status_code, 200)
             self.assertTrue(resp.get_json()["success"])
 

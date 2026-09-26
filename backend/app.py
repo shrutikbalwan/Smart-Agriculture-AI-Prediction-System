@@ -1,6 +1,9 @@
+import hashlib
 import io
+import json
 import logging
 import os
+import secrets
 from collections import Counter
 from datetime import date, datetime
 
@@ -18,17 +21,41 @@ from flask_jwt_extended import (
     jwt_required,
 )
 
-from db import get_db
+# Works both as a package (gunicorn backend.app:app) and as a script/tests (python app.py)
+try:
+    from .db import get_db
+    from . import agronomy
+    from .weather_service import fetch_forecast_summary
+except ImportError:  # pragma: no cover - exercised depending on how the app is launched
+    from db import get_db
+    import agronomy
+    from weather_service import fetch_forecast_summary
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "..", "model")
 
+APP_ENV = os.getenv("APP_ENV", "development").lower()
+IS_PRODUCTION = APP_ENV == "production"
+
+
+def _secret(name):
+    """Secrets are mandatory in production; development gets a random per-process value."""
+    value = os.getenv(name)
+    if value:
+        return value
+    if IS_PRODUCTION:
+        raise RuntimeError(f"{name} must be set when APP_ENV=production")
+    return secrets.token_hex(32)
+
+
 app = Flask(__name__)
-app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY", "dev-secret-key")
-app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "dev-jwt-secret")
+app.config["SECRET_KEY"] = _secret("FLASK_SECRET_KEY")
+app.config["JWT_SECRET_KEY"] = _secret("JWT_SECRET_KEY")
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = 86400
 
-CORS(app)
+_cors_env = os.getenv("CORS_ORIGINS", "")
+CORS_ORIGINS = [o.strip() for o in _cors_env.split(",") if o.strip()] or ([] if IS_PRODUCTION else "*")
+CORS(app, origins=CORS_ORIGINS)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
@@ -152,11 +179,11 @@ def log_audit(user_id, action, entity_type=None, entity_id=None, details=None, i
     try:
         db_cursor.execute(
             "INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (%s, %s, %s, %s, %s, %s)",
-            (user_id, action, entity_type, entity_id, json.dumps(details) if details else None, ip),
+            (user_id, action, entity_type, entity_id, json.dumps(details, default=str) if details else None, ip),
         )
         db_conn.commit()
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("Audit log write failed: %s", exc)
 
 
 # ===================== HEALTH =====================
@@ -382,6 +409,7 @@ def predict():
                 "PredictionTime": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
                 "ModelVersion": "v1.0", "Confidence": confidence or "N/A",
             },
+            "notice": "Legacy demo models trained on a synthetic dataset; use /v2/advise for irrigation decisions.",
         })
     except Exception as exc:
         logger.error("Prediction error: %s", exc)
@@ -460,7 +488,7 @@ def history_list():
 
 
 @app.route("/history/<int:record_id>", methods=["DELETE"])
-@jwt_required(optional=True)
+@jwt_required()
 def delete_history_entry(record_id):
     db_conn, _ = get_db()
     if db_conn is None:
@@ -551,6 +579,7 @@ def dashboard_stats():
 # ===================== EXPORT =====================
 
 @app.route("/export/csv", methods=["GET"])
+@jwt_required()
 def export_csv():
     db_conn, _ = get_db()
     if db_conn is None:
@@ -580,6 +609,7 @@ def export_csv():
 
 
 @app.route("/export/excel", methods=["GET"])
+@jwt_required()
 def export_excel():
     db_conn, _ = get_db()
     if db_conn is None:
@@ -608,8 +638,221 @@ def export_excel():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+# ===================== V2: AGRONOMY, DEVICES, TELEMETRY =====================
+
+DEVICE_FIELDS = ["name", "crop", "sowing_date", "soil_texture", "area_m2", "irrigation_method"]
+
+
+def _hash_key(key):
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()
+
+
+def _parse_date(value, field_name):
+    try:
+        return datetime.strptime(str(value), "%Y-%m-%d").date()
+    except (TypeError, ValueError):
+        raise agronomy.AgronomyError(f"{field_name} must be YYYY-MM-DD")
+
+
+def _float_or_none(value, field_name):
+    if value is None or value == "":
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        raise agronomy.AgronomyError(f"{field_name} must be a number")
+
+
+def _device_from_request():
+    """Authenticate a field device by its X-Device-Key header."""
+    key = request.headers.get("X-Device-Key", "")
+    if not key:
+        return None, (jsonify({"success": False, "error": "X-Device-Key header required"}), 401)
+    db_conn, _ = get_db()
+    if db_conn is None:
+        return None, (jsonify({"success": False, "error": "Database unavailable"}), 503)
+    cursor = db_conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT * FROM devices WHERE api_key_hash = %s AND active = 1", (_hash_key(key),))
+        device = cursor.fetchone()
+    finally:
+        cursor.close()
+    if not device:
+        return None, (jsonify({"success": False, "error": "Unknown or inactive device"}), 401)
+    return device, None
+
+
+@app.route("/v2/crops", methods=["GET"])
+def v2_crops():
+    return jsonify({
+        "success": True,
+        "crops": {k: {"name": c.name, "stage_days": c.stage_days, "kc": [c.kc_ini, c.kc_mid, c.kc_end], "source": c.note}
+                  for k, c in agronomy.CROPS.items()},
+        "soils": {k: {"name": v.name, "field_capacity": v.field_capacity, "wilting_point": v.wilting_point}
+                  for k, v in agronomy.SOILS.items()},
+        "irrigation_methods": sorted(agronomy.IRRIGATION_EFFICIENCY),
+    })
+
+
+@app.route("/v2/advise", methods=["POST"])
+@jwt_required()
+def v2_advise():
+    """Explainable irrigation advice from explicit inputs (dashboard / manual use)."""
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"success": False, "error": "Request body must be JSON"}), 400
+    try:
+        missing = [f for f in ["crop", "sowing_date", "soil_texture", "area_m2"] if data.get(f) in (None, "")]
+        if missing:
+            raise agronomy.AgronomyError(f"Missing required fields: {', '.join(missing)}")
+        weather = data.get("weather") or {}
+        advice = agronomy.irrigation_advice(
+            crop=data["crop"],
+            sowing_date=_parse_date(data["sowing_date"], "sowing_date"),
+            today=_parse_date(data["date"], "date") if data.get("date") else date.today(),
+            soil_texture=data["soil_texture"],
+            area_m2=_float_or_none(data["area_m2"], "area_m2"),
+            irrigation_method=data.get("irrigation_method", "drip"),
+            soil_vwc_pct=_float_or_none(data.get("soil_vwc_pct"), "soil_vwc_pct"),
+            rain_today_mm=_float_or_none(data.get("rain_today_mm"), "rain_today_mm") or 0.0,
+            rain_forecast_48h_mm=_float_or_none(data.get("rain_forecast_48h_mm"), "rain_forecast_48h_mm") or 0.0,
+            weather={k: _float_or_none(v, f"weather.{k}") for k, v in weather.items()},
+            latitude=_float_or_none(data.get("latitude"), "latitude"),
+            elevation_m=_float_or_none(data.get("elevation_m"), "elevation_m") or 0.0,
+            pump_flow_lph=_float_or_none(data.get("pump_flow_lph"), "pump_flow_lph"),
+        )
+    except agronomy.AgronomyError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
+    return jsonify({"success": True, "advice": advice.to_dict()})
+
+
+@app.route("/v2/devices", methods=["POST"])
+@jwt_required()
+def v2_register_device():
+    """Register a field node with its farm context; returns the device key ONCE."""
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"success": False, "error": "Request body must be JSON"}), 400
+    missing = [f for f in DEVICE_FIELDS if data.get(f) in (None, "")]
+    if missing:
+        return jsonify({"success": False, "error": f"Missing required fields: {', '.join(missing)}"}), 400
+    try:
+        agronomy.get_crop(data["crop"])
+        agronomy.get_soil(data["soil_texture"])
+        if str(data["irrigation_method"]).lower() not in agronomy.IRRIGATION_EFFICIENCY:
+            raise agronomy.AgronomyError(f"Unknown irrigation method '{data['irrigation_method']}'")
+        sowing = _parse_date(data["sowing_date"], "sowing_date")
+        area = _float_or_none(data["area_m2"], "area_m2")
+        if area is None or area <= 0:
+            raise agronomy.AgronomyError("area_m2 must be > 0")
+        lat = _float_or_none(data.get("latitude"), "latitude")
+        lon = _float_or_none(data.get("longitude"), "longitude")
+        elev = _float_or_none(data.get("elevation_m"), "elevation_m") or 0.0
+        flow = _float_or_none(data.get("pump_flow_lph"), "pump_flow_lph")
+    except agronomy.AgronomyError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
+
+    db_conn, _ = get_db()
+    if db_conn is None:
+        return jsonify({"success": False, "error": "Database unavailable"}), 503
+    device_uid = "dev_" + secrets.token_hex(6)
+    device_key = secrets.token_urlsafe(32)
+    cursor = db_conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """INSERT INTO devices (device_uid, api_key_hash, owner_user_id, name, crop, sowing_date, soil_texture,
+               area_m2, irrigation_method, latitude, longitude, elevation_m, pump_flow_lph)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+            (device_uid, _hash_key(device_key), int(get_jwt_identity()), data["name"], data["crop"].lower(),
+             sowing, data["soil_texture"].lower(), area, data["irrigation_method"].lower(), lat, lon, elev, flow),
+        )
+        db_conn.commit()
+    except Exception as exc:
+        logger.error("Device registration failed: %s", exc)
+        return jsonify({"success": False, "error": "Could not register device"}), 500
+    finally:
+        cursor.close()
+    log_audit(int(get_jwt_identity()), "register_device", "device", None, {"device_uid": device_uid}, request.remote_addr)
+    return jsonify({
+        "success": True, "device_uid": device_uid, "device_key": device_key,
+        "note": "Store device_key in the node's setup portal now; it is not shown again.",
+    }), 201
+
+
+@app.route("/v2/telemetry", methods=["POST"])
+def v2_telemetry():
+    """Field node posts readings; receives an irrigation command in response."""
+    device, error = _device_from_request()
+    if error:
+        return error
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"success": False, "error": "Request body must be JSON"}), 400
+    try:
+        soil_vwc = _float_or_none(data.get("soil_vwc_pct"), "soil_vwc_pct")
+        if soil_vwc is not None and not (0 <= soil_vwc <= 100):
+            raise agronomy.AgronomyError("soil_vwc_pct must be 0-100")
+        air_t = _float_or_none(data.get("air_temp_c"), "air_temp_c")
+        air_rh = _float_or_none(data.get("air_rh_pct"), "air_rh_pct")
+        rain_mm = _float_or_none(data.get("rain_mm"), "rain_mm") or 0.0
+        battery = _float_or_none(data.get("battery_v"), "battery_v")
+    except agronomy.AgronomyError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
+
+    db_conn, _ = get_db()
+    cursor = db_conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """INSERT INTO sensor_readings (device_id, soil_vwc_pct, air_temp_c, air_rh_pct, rain_mm, battery_v, firmware)
+               VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+            (device["id"], soil_vwc, air_t, air_rh, rain_mm, battery, str(data.get("firmware", ""))[:20]),
+        )
+        db_conn.commit()
+    except Exception as exc:
+        logger.warning("Reading not stored: %s", exc)
+    finally:
+        cursor.close()
+
+    forecast = fetch_forecast_summary(
+        float(device["latitude"]) if device.get("latitude") is not None else None,
+        float(device["longitude"]) if device.get("longitude") is not None else None,
+        OWM_API_KEY,
+    )
+    weather = {}
+    if forecast:
+        weather = {k: forecast[k] for k in ["t_max", "t_min", "rh_max", "rh_min", "wind_u2"] if forecast.get(k) is not None}
+    try:
+        sowing = device["sowing_date"]
+        if isinstance(sowing, str):
+            sowing = _parse_date(sowing, "sowing_date")
+        advice = agronomy.irrigation_advice(
+            crop=device["crop"], sowing_date=sowing, today=date.today(),
+            soil_texture=device["soil_texture"], area_m2=float(device["area_m2"]),
+            irrigation_method=device["irrigation_method"], soil_vwc_pct=soil_vwc,
+            rain_today_mm=rain_mm,
+            rain_forecast_48h_mm=forecast["rain_forecast_48h_mm"] if forecast else 0.0,
+            weather=weather,
+            latitude=float(device["latitude"]) if device.get("latitude") is not None else None,
+            elevation_m=float(device.get("elevation_m") or 0.0),
+            pump_flow_lph=float(device["pump_flow_lph"]) if device.get("pump_flow_lph") else None,
+        )
+    except agronomy.AgronomyError as exc:
+        return jsonify({"success": False, "error": str(exc), "command": {"irrigate": False, "minutes": 0}}), 422
+
+    result = advice.to_dict()
+    if not forecast:
+        result["reasons"].append("Weather forecast unavailable: decision based on soil moisture only.")
+    return jsonify({
+        "success": True,
+        "device_uid": device["device_uid"],
+        "command": {"irrigate": advice.irrigate, "minutes": advice.minutes or 0, "litres": advice.litres},
+        "advice": result,
+        "weather": forecast,
+    })
+
+
 if __name__ == "__main__":
     host = os.getenv("SERVER_HOST", "0.0.0.0")
     port = int(os.getenv("SERVER_PORT", "5000"))
-    debug = os.getenv("FLASK_DEBUG", "true").lower() == "true"
+    debug = os.getenv("FLASK_DEBUG", "false").lower() == "true"
     app.run(host=host, port=port, debug=debug)
